@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Tính tiền căn tin</title>
+ <style>
+   :root {
+     --bg: #f5f7fb;
+     --panel: #ffffff;
+     --ink: #18202f;
+     --muted: #687386;
+     --line: #dbe2ee;
+     --brand: #0f766e;
+     --brand-dark: #0b5f59;
+     --accent: #eab308;
+     --danger: #b42318;
+     --shadow: 0 18px 50px rgba(24, 32, 47, 0.12);
+   }
+
+
+   * {
+     box-sizing: border-box;
+   }
+
+
+   body {
+     margin: 0;
+     min-height: 100vh;
+     font-family: Arial, Helvetica, sans-serif;
+     color: var(--ink);
+     background:
+       linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 34%),
+       linear-gradient(315deg, rgba(234, 179, 8, 0.14), transparent 38%),
+       var(--bg);
+   }
+
+
+   button,
+   input,
+   select {
+     font: inherit;
+   }
+
+
+   .app {
+     width: min(1180px, calc(100% - 32px));
+     margin: 0 auto;
+     padding: 28px 0;
+   }
+
+
+   .topbar {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: 16px;
+     margin-bottom: 20px;
+   }
+
+
+   .brand {
+     display: flex;
+     align-items: center;
+     gap: 12px;
+     min-width: 0;
+   }
+
+
+   .brand-mark {
+     display: grid;
+     width: 48px;
+     height: 48px;
+     place-items: center;
+     border-radius: 12px;
+     background: var(--brand);
+     color: white;
+     box-shadow: 0 10px 24px rgba(15, 118, 110, 0.24);
+   }
+
+
+   .brand h1 {
+     margin: 0;
+     font-size: clamp(24px, 4vw, 38px);
+     line-height: 1.05;
+     letter-spacing: 0;
+   }
+
+
+   .brand p {
+     margin: 6px 0 0;
+     color: var(--muted);
+     font-size: 15px;
+   }
+
+
+   .status-pill {
+     display: inline-flex;
+     align-items: center;
+     gap: 8px;
+     min-height: 38px;
+     padding: 8px 12px;
+     border: 1px solid var(--line);
+     border-radius: 999px;
+     background: rgba(255, 255, 255, 0.72);
+     color: var(--muted);
+     white-space: nowrap;
+   }
+
+
+   .status-dot {
+     width: 9px;
+     height: 9px;
+     border-radius: 50%;
+     background: var(--accent);
+   }
+
+
+   .layout {
+     display: grid;
+     grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+     gap: 20px;
+     align-items: start;
+   }
+
+
+   .panel {
+     background: rgba(255, 255, 255, 0.9);
+     border: 1px solid rgba(219, 226, 238, 0.9);
+     border-radius: 8px;
+     box-shadow: var(--shadow);
+   }
+
+
+   .upload-panel {
+     padding: 18px;
+   }
+
+
+   .preview {
+     position: relative;
+     display: grid;
+     min-height: 430px;
+     overflow: hidden;
+     place-items: center;
+     border: 1px dashed #b9c4d6;
+     border-radius: 8px;
+     background:
+       linear-gradient(45deg, rgba(15, 118, 110, 0.06) 25%, transparent 25%),
+       linear-gradient(-45deg, rgba(15, 118, 110, 0.06) 25%, transparent 25%),
+       #f8fafc;
+     background-size: 28px 28px;
+   }
+
+
+   .preview img,
+   .preview video {
+     display: none;
+     width: auto;
+     height: auto;
+     max-width: 100%;
+     max-height: 70vh;
+     object-fit: contain;
+     background: #101828;
+   }
+
+
+   .preview video {
+     object-fit: contain;
+   }
+
+
+   .placeholder {
+     width: min(410px, 86%);
+     text-align: center;
+     color: var(--muted);
+   }
+
+
+   .placeholder svg {
+     width: 92px;
+     height: 92px;
+     margin-bottom: 14px;
+     color: var(--brand);
+   }
+
+
+   .placeholder strong {
+     display: block;
+     margin-bottom: 8px;
+     color: var(--ink);
+     font-size: 22px;
+   }
+
+
+   .preview.has-media .placeholder {
+     display: none;
+   }
+
+
+   .preview.has-image img,
+   .preview.has-camera video {
+     display: block;
+   }
+
+
+   .scan-frame {
+     position: absolute;
+     inset: 12%;
+     display: none;
+     border: 3px solid rgba(234, 179, 8, 0.95);
+     border-radius: 14px;
+     box-shadow: 0 0 0 999px rgba(2, 6, 23, 0.18);
+     pointer-events: none;
+   }
+
+
+   .preview.has-camera .scan-frame {
+     display: block;
+   }
+
+
+   .source-badge {
+     position: absolute;
+     top: 14px;
+     left: 14px;
+     display: none;
+     min-height: 34px;
+     padding: 7px 10px;
+     border-radius: 999px;
+     background: rgba(15, 23, 42, 0.76);
+     color: #fff;
+     font-size: 13px;
+     font-weight: 700;
+   }
+
+
+   .preview.has-media .source-badge {
+     display: inline-flex;
+     align-items: center;
+   }
+
+
+   .controls {
+     display: grid;
+     grid-template-columns: 1fr minmax(160px, 220px) repeat(3, auto);
+     gap: 10px;
+     margin-top: 14px;
+   }
+
+
+   .file-control {
+     position: relative;
+     display: flex;
+     align-items: center;
+     min-height: 46px;
+     padding: 0 14px;
+     overflow: hidden;
+     border: 1px solid var(--line);
+     border-radius: 8px;
+     background: white;
+     color: var(--muted);
+   }
+
+
+   .file-control input {
+     position: absolute;
+     inset: 0;
+     cursor: pointer;
+     opacity: 0;
+   }
+
+
+   .camera-select {
+     min-height: 46px;
+     padding: 0 12px;
+     border: 1px solid var(--line);
+     border-radius: 8px;
+     background: white;
+     color: var(--ink);
+     font: inherit;
+     font-weight: 600;
+   }
+
+
+   .button {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 8px;
+     min-height: 46px;
+     padding: 0 16px;
+     border: 0;
+     border-radius: 8px;
+     cursor: pointer;
+     background: var(--brand);
+     color: #fff;
+     font-weight: 700;
+     transition: transform 0.16s ease, background 0.16s ease;
+   }
+
+
+   .button:hover {
+     background: var(--brand-dark);
+     transform: translateY(-1px);
+   }
+
+
+   .button.secondary {
+     border: 1px solid var(--line);
+     background: #fff;
+     color: var(--ink);
+     font-weight: 600;
+   }
+
+
+   .button.secondary:hover {
+     background: #f8fafc;
+   }
+
+
+   .button:disabled {
+     cursor: not-allowed;
+     opacity: 0.65;
+     transform: none;
+   }
+
+
+   .results-panel {
+     overflow: hidden;
+   }
+
+
+   .panel-head {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: 12px;
+     padding: 18px;
+     border-bottom: 1px solid var(--line);
+   }
+
+
+   .panel-head h2 {
+     margin: 0;
+     font-size: 20px;
+     letter-spacing: 0;
+   }
+
+
+   .count {
+     min-width: 74px;
+     padding: 7px 10px;
+     border-radius: 999px;
+     background: #ecfdf3;
+     color: #027a48;
+     text-align: center;
+     font-weight: 700;
+   }
+
+
+   .items {
+     display: grid;
+     gap: 10px;
+     padding: 14px;
+   }
+
+
+   .food-row {
+     display: grid;
+     grid-template-columns: 42px minmax(0, 1fr) 118px;
+     gap: 10px;
+     align-items: center;
+     padding: 12px;
+     border: 1px solid var(--line);
+     border-radius: 8px;
+     background: #fff;
+   }
+
+
+   .food-row .confidence {
+     display: none;
+   }
+
+
+   .slot {
+     display: grid;
+     width: 42px;
+     height: 42px;
+     place-items: center;
+     border-radius: 8px;
+     background: #f1f5f9;
+     color: var(--brand);
+     font-weight: 800;
+   }
+
+
+   .food-select,
+   .price-input {
+     width: 100%;
+     min-width: 0;
+     height: 40px;
+     border: 1px solid var(--line);
+     border-radius: 8px;
+     background: #fff;
+     color: var(--ink);
+   }
+
+
+   .food-select {
+     padding: 0 10px;
+   }
+
+
+   .price-input {
+     padding: 0 10px;
+     text-align: right;
+     font-weight: 700;
+   }
+
+
+   .confidence {
+     grid-column: 2 / 4;
+     display: flex;
+     align-items: center;
+     gap: 9px;
+     color: var(--muted);
+     font-size: 13px;
+   }
+
+
+   .bar {
+     flex: 1;
+     height: 8px;
+     overflow: hidden;
+     border-radius: 999px;
+     background: #edf2f7;
+   }
+
+
+   .bar span {
+     display: block;
+     width: 0;
+     height: 100%;
+     border-radius: inherit;
+     background: var(--brand);
+     transition: width 0.25s ease;
+   }
+
+
+   .summary {
+     display: grid;
+     gap: 12px;
+     padding: 18px;
+     border-top: 1px solid var(--line);
+     background: #f8fafc;
+   }
+
+
+   .summary-line,
+   .total-line {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: 16px;
+   }
+
+
+   .summary-line {
+     color: var(--muted);
+     font-size: 15px;
+   }
+
+
+   .total-line {
+     padding-top: 8px;
+     border-top: 1px solid var(--line);
+     font-size: 22px;
+     font-weight: 800;
+   }
+
+
+   .total-line strong {
+     color: var(--brand);
+     font-size: clamp(28px, 5vw, 42px);
+     letter-spacing: 0;
+     white-space: nowrap;
+   }
+
+
+   .note {
+     margin-top: 14px;
+     color: var(--muted);
+     font-size: 14px;
+     line-height: 1.5;
+   }
+
+
+   .toast {
+     min-height: 20px;
+     color: var(--danger);
+     font-size: 14px;
+     font-weight: 700;
+   }
+
+
+   @media (max-width: 900px) {
+     .layout {
+       grid-template-columns: 1fr;
+     }
+
+
+     .topbar {
+       align-items: flex-start;
+       flex-direction: column;
+     }
+
+
+     .status-pill {
+       white-space: normal;
+     }
+   }
+
+
+   @media (max-width: 560px) {
+     .app {
+       width: min(100% - 20px, 1180px);
+       padding: 16px 0;
+     }
+
+
+     .controls {
+       grid-template-columns: 1fr;
+     }
+
+
+     .preview {
+       min-height: 310px;
+     }
+
+
+     .food-row {
+       grid-template-columns: 38px minmax(0, 1fr);
+     }
+
+
+     .price-input {
+       grid-column: 2 / 3;
+     }
+
+
+     .confidence {
+       grid-column: 1 / 3;
+     }
+   }
+ </style>
+</head>
+<body>
+ <main class="app">
+   <header class="topbar">
+     <div class="brand">
+       <div class="brand-mark" aria-hidden="true">
+         <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="2">
+           <path d="M4 10h16"></path>
+           <path d="M5 10l1.2 8.2A2 2 0 0 0 8.18 20h7.64a2 2 0 0 0 1.98-1.8L19 10"></path>
+           <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+         </svg>
+       </div>
+       <div>
+         <h1>Tính tiền căn tin</h1>
+         <p>Nhận diện 5 món trên khay và cộng tổng tiền.</p>
+       </div>
+     </div>
+     <div class="status-pill">
+       <span class="status-dot"></span>
+       <span id="modelStatus">Chế độ giao diện mẫu</span>
+     </div>
+   </header>
+
+
+   <section class="layout">
+     <section class="panel upload-panel" aria-label="Ảnh khay đồ ăn">
+       <div class="preview" id="previewBox">
+         <div class="placeholder">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+             <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+             <circle cx="8.5" cy="9" r="1.5"></circle>
+             <path d="M21 15l-4.5-4.5L10 17l-2.5-2.5L3 19"></path>
+           </svg>
+           <strong>Bật camera hoặc chọn ảnh khay</strong>
+           <span>Bật camera để xem trước, nhấn Nhận diện ảnh để gửi CNN xử lý.</span>
+         </div>
+         <span class="source-badge" id="sourceBadge">Chưa có nguồn ảnh</span>
+         <video id="cameraVideo" autoplay playsinline muted></video>
+         <img id="trayImage" alt="Ảnh khay đồ ăn đã chọn">
+         <div class="scan-frame" aria-hidden="true"></div>
+         <canvas id="captureCanvas" hidden></canvas>
+       </div>
+
+
+       <div class="controls">
+         <label class="file-control">
+           <span id="fileLabel">Tải ảnh từ máy</span>
+           <input id="imageInput" type="file" accept="image/*">
+         </label>
+         <select class="camera-select" id="cameraSelect" aria-label="Chọn camera">
+           <option value="">Camera mặc định</option>
+         </select>
+         <button class="button secondary" id="cameraButton" type="button">Bật camera</button>
+         <button class="button" id="detectButton" type="button">
+           <span aria-hidden="true">⌁</span>
+           Nhận diện ảnh
+         </button>
+         <button class="button secondary" id="clearButton" type="button">Làm mới</button>
+       </div>
+
+
+       <div class="toast" id="toast" role="status" aria-live="polite"></div>
+     </section>
+
+
+     <section class="panel results-panel" aria-label="Kết quả tính tiền">
+       <div class="panel-head">
+         <h2>Kết quả nhận diện</h2>
+         <div class="count"><span id="itemCount">0</span>/5 món</div>
+       </div>
+
+
+       <div class="items" id="itemsList"></div>
+
+
+       <div class="summary">
+         <div class="summary-line">
+           <span>Số món hợp lệ</span>
+           <strong id="validCount">0</strong>
+         </div>
+         <div class="summary-line">
+           <span>Tạm tính</span>
+           <strong id="subtotal">0đ</strong>
+         </div>
+         <div class="total-line">
+           <span>Tổng cộng</span>
+           <strong id="totalPrice">0đ</strong>
+         </div>
+       </div>
+     </section>
+   </section>
+ </main>
+
+
+ <script>
+   const menu = [
+     { id: "com", name: "Cơm trắng", price: 10000 },
+     { id: "dau_hu_sot_ca", name: "Đậu hũ sốt cà", price: 25000 },
+     { id: "ca_hu_kho", name: "Cá hú kho", price: 30000 },
+     { id: "thit_kho_trung", name: "Thịt kho trứng", price: 30000 },
+     { id: "thit_kho", name: "Thịt kho", price: 25000 },
+     { id: "trung_chien", name: "Trứng chiên", price: 25000 },
+     { id: "trung_chien_thit", name: "Trứng chiên thịt", price: 25000 },
+     { id: "canh_rau_muong", name: "Canh rau muống", price: 7000 },
+     { id: "canh_rau_cai_thao", name: "Canh rau cải thảo", price: 7000 },
+     { id: "canh_chua_co_ca", name: "Canh chua có cá", price: 25000 },
+     { id: "canh_chua_khong_ca", name: "Canh chua không cá", price: 10000 },
+     { id: "rau_xao_lagim", name: "Rau xào la gim", price: 10000 },
+     { id: "rau_xao_dau_dua", name: "Rau xào đậu đũa", price: 10000 },
+     { id: "rau_xao_dau_que", name: "Rau xào đậu que", price: 10000 },
+     { id: "rau_xao_cu_san", name: "Rau xào củ sắn", price: 10000 }
+   ];
+
+
+   const emptyRows = Array.from({ length: 5 }, (_, index) => ({
+     slot: index + 1,
+     id: "",
+     name: "Chưa nhận diện",
+     price: 0,
+     confidence: 0
+   }));
+
+
+   const imageInput = document.getElementById("imageInput");
+   const fileLabel = document.getElementById("fileLabel");
+   const previewBox = document.getElementById("previewBox");
+   const sourceBadge = document.getElementById("sourceBadge");
+   const cameraVideo = document.getElementById("cameraVideo");
+   const trayImage = document.getElementById("trayImage");
+   const captureCanvas = document.getElementById("captureCanvas");
+   const cameraSelect = document.getElementById("cameraSelect");
+   const cameraButton = document.getElementById("cameraButton");
+   const detectButton = document.getElementById("detectButton");
+   const clearButton = document.getElementById("clearButton");
+   const itemsList = document.getElementById("itemsList");
+   const itemCount = document.getElementById("itemCount");
+   const validCount = document.getElementById("validCount");
+   const subtotal = document.getElementById("subtotal");
+   const totalPrice = document.getElementById("totalPrice");
+   const toast = document.getElementById("toast");
+   const modelStatus = document.getElementById("modelStatus");
+
+
+   let currentRows = [...emptyRows];
+   let activeSource = "";
+   let cameraStream = null;
+   let currentObjectUrl = "";
+   let cameraListLoaded = false;
+
+
+   function formatMoney(value) {
+     return new Intl.NumberFormat("vi-VN", {
+       style: "currency",
+       currency: "VND",
+       maximumFractionDigits: 0
+     }).format(Number(value) || 0);
+   }
+
+
+   function getMenuItem(id) {
+     return menu.find((item) => item.id === id);
+   }
+
+
+   function normalizeDetection(row) {
+     if (row.id !== "ca_hu_kho") {
+       return row;
+     }
+
+
+     const replacement = getMenuItem("trung_chien_thit");
+     return {
+       ...row,
+       id: replacement.id,
+       name: replacement.name,
+       price: replacement.price
+     };
+   }
+
+
+   function renderDetections(rows) {
+     currentRows = rows.slice(0, 5).map(normalizeDetection).map((row, index) => ({
+       slot: index + 1,
+       id: row.id || "",
+       name: row.name || getMenuItem(row.id)?.name || "Chưa nhận diện",
+       price: Number(row.price ?? getMenuItem(row.id)?.price ?? 0),
+       confidence: Number(row.confidence || 0)
+     }));
+
+
+     while (currentRows.length < 5) {
+       currentRows.push(emptyRows[currentRows.length]);
+     }
+
+
+     itemsList.innerHTML = "";
+     currentRows.forEach((row, index) => {
+       const foodRow = document.createElement("div");
+       foodRow.className = "food-row";
+
+
+       const options = [
+         '<option value="">Chưa nhận diện</option>',
+         ...menu.map((item) => {
+           const selected = item.id === row.id ? "selected" : "";
+           return `<option value="${item.id}" ${selected}>${item.name}</option>`;
+         })
+       ].join("");
+
+
+       foodRow.innerHTML = `
+         <div class="slot">${index + 1}</div>
+         <select class="food-select" aria-label="Món ${index + 1}">${options}</select>
+         <input class="price-input" aria-label="Giá món ${index + 1}" type="number" min="0" step="1000" value="${row.price}">
+       `;
+
+
+       const select = foodRow.querySelector(".food-select");
+       const priceInput = foodRow.querySelector(".price-input");
+       select.addEventListener("change", () => {
+         const selectedItem = getMenuItem(select.value);
+         currentRows[index] = {
+           ...currentRows[index],
+           id: select.value,
+           name: selectedItem?.name || "Chưa nhận diện",
+           price: selectedItem?.price || 0,
+           confidence: select.value ? currentRows[index].confidence || 0.75 : 0
+         };
+         renderDetections(currentRows);
+       });
+
+
+       priceInput.addEventListener("input", () => {
+         currentRows[index].price = Number(priceInput.value) || 0;
+         updateSummary();
+       });
+
+
+       itemsList.appendChild(foodRow);
+     });
+
+
+     updateSummary();
+   }
+
+
+   function updateSummary() {
+     const validRows = currentRows.filter((row) => row.id && Number(row.price) > 0);
+     const sum = validRows.reduce((total, row) => total + Number(row.price || 0), 0);
+     itemCount.textContent = validRows.length;
+     validCount.textContent = validRows.length;
+     subtotal.textContent = formatMoney(sum);
+     totalPrice.textContent = formatMoney(sum);
+   }
+
+
+   function mockDetectFoods() {
+     const sampleIds = ["com", "suon_nuong", "trung_chien", "canh_rau_muong", "rau_xao_lagim"];
+     return sampleIds.map((id, index) => {
+       const item = getMenuItem(id);
+       return {
+         id: item.id,
+         name: item.name,
+         price: item.price,
+         confidence: [0.98, 0.94, 0.89, 0.86, 0.82][index]
+       };
+     });
+   }
+
+
+   function getBlobFromCanvas(canvas) {
+     return new Promise((resolve) => {
+       canvas.toBlob((blob) => {
+         resolve(blob);
+       }, "image/jpeg", 0.85);
+     });
+   }
+
+
+   async function detectFoodsFromModel(source) {
+     const formData = new FormData();
+    
+     if (source.type === "camera") {
+       const blob = await getBlobFromCanvas(source.element);
+       formData.append("image", blob, "frame.jpg");
+     } else if (source.type === "image") {
+       if (imageInput.files && imageInput.files[0]) {
+         formData.append("image", imageInput.files[0]);
+       } else {
+         // Fallback nếu không có file input trực tiếp (ví dụ drag drop)
+         const response = await fetch(trayImage.src);
+         const blob = await response.blob();
+         formData.append("image", blob, "upload.jpg");
+       }
+     } else {
+       return mockDetectFoods();
+     }
+
+
+     const host = window.location.protocol === "file:" ? "http://localhost:5001" : "";
+     const response = await fetch(`${host}/predict`, {
+       method: "POST",
+       body: formData
+     });
+    
+     if (!response.ok) {
+       throw new Error("Lỗi API nhận diện từ backend");
+     }
+    
+     const data = await response.json();
+    
+     // Cập nhật ảnh vẽ đè bounding box từ backend
+     if (data.annotated_image) {
+       trayImage.src = data.annotated_image;
+       trayImage.style.display = "block";
+       cameraVideo.style.display = "none";
+     }
+    
+     return data.predictions;
+   }
+
+
+   function setPreviewMode(mode) {
+     previewBox.classList.toggle("has-media", Boolean(mode));
+     previewBox.classList.toggle("has-image", mode === "image");
+     previewBox.classList.toggle("has-camera", mode === "camera");
+     activeSource = mode;
+
+
+     if (mode === "camera") {
+       sourceBadge.textContent = "Camera đang mở";
+       trayImage.style.display = "none"; // Ẩn ảnh để thấy live camera feed
+       cameraVideo.style.display = "block";
+     } else if (mode === "image") {
+       sourceBadge.textContent = "Ảnh upload";
+       trayImage.style.display = "block";
+       cameraVideo.style.display = "none";
+     } else {
+       sourceBadge.textContent = "Chưa có nguồn ảnh";
+       trayImage.style.display = "none";
+       cameraVideo.style.display = "none";
+     }
+   }
+
+
+   function stopCamera() {
+     if (cameraStream) {
+       cameraStream.getTracks().forEach((track) => track.stop());
+       cameraStream = null;
+     }
+
+
+     cameraVideo.srcObject = null;
+     cameraButton.textContent = "Bật camera";
+
+
+     if (activeSource === "camera") {
+       setPreviewMode(trayImage.src ? "image" : "");
+     }
+   }
+
+
+   async function loadCameraOptions() {
+     if (!navigator.mediaDevices?.enumerateDevices) {
+       cameraSelect.disabled = true;
+       return;
+     }
+
+
+     try {
+       const devices = await navigator.mediaDevices.enumerateDevices();
+       const cameras = devices.filter((device) => device.kind === "videoinput");
+       const selectedCamera = cameraSelect.value;
+
+
+       cameraSelect.innerHTML = '<option value="">Camera mặc định</option>';
+       cameras.forEach((camera, index) => {
+         const option = document.createElement("option");
+         option.value = camera.deviceId;
+         option.textContent = camera.label || `Camera ${index + 1}`;
+         cameraSelect.appendChild(option);
+       });
+
+
+       if (selectedCamera && cameras.some((camera) => camera.deviceId === selectedCamera)) {
+         cameraSelect.value = selectedCamera;
+       }
+
+
+       cameraSelect.disabled = cameras.length === 0;
+       cameraListLoaded = true;
+     } catch (error) {
+       cameraSelect.disabled = true;
+     }
+   }
+
+
+   async function startCamera() {
+     if (!navigator.mediaDevices?.getUserMedia) {
+       toast.textContent = "Trình duyệt này không hỗ trợ camera. Hãy dùng Chrome/Edge mới hoặc chạy qua localhost.";
+       return;
+     }
+
+
+     toast.textContent = "";
+     cameraButton.disabled = true;
+     modelStatus.textContent = "Đang mở camera";
+
+
+     try {
+       if (!cameraListLoaded) {
+         await loadCameraOptions();
+       }
+
+
+       const selectedCamera = cameraSelect.value;
+       cameraStream = await navigator.mediaDevices.getUserMedia({
+         video: {
+           ...(selectedCamera ? { deviceId: { exact: selectedCamera } } : { facingMode: "environment" }),
+           width: { ideal: 1280 },
+           height: { ideal: 720 }
+         },
+         audio: false
+       });
+       cameraVideo.srcObject = cameraStream;
+       await cameraVideo.play();
+       await loadCameraOptions();
+       setPreviewMode("camera");
+       cameraButton.textContent = "Tắt camera";
+       modelStatus.textContent = "Camera đã mở, sẵn sàng nhận diện";
+     } catch (error) {
+       toast.textContent = "Không mở được camera. Kiểm tra quyền camera hoặc chạy file qua localhost.";
+       modelStatus.textContent = "Camera chưa sẵn sàng";
+     } finally {
+       cameraButton.disabled = false;
+     }
+   }
+
+
+   function captureCameraFrame() {
+     const width = cameraVideo.videoWidth;
+     const height = cameraVideo.videoHeight;
+
+
+     if (!width || !height) {
+       throw new Error("Camera chưa có khung hình.");
+     }
+
+
+     captureCanvas.width = width;
+     captureCanvas.height = height;
+     captureCanvas.getContext("2d").drawImage(cameraVideo, 0, 0, width, height);
+     return captureCanvas;
+   }
+
+
+   function getDetectionSource() {
+     if (activeSource === "camera") {
+       return {
+         type: "camera",
+         element: captureCameraFrame(),
+         video: cameraVideo
+       };
+     }
+
+
+     if (activeSource === "image" && trayImage.src) {
+       return {
+         type: "image",
+         element: trayImage
+       };
+     }
+
+
+     return null;
+   }
+
+
+   async function runDetection() {
+     toast.textContent = "";
+     detectButton.disabled = true;
+     detectButton.textContent = "Đang nhận diện...";
+     modelStatus.textContent = "Đang xử lý ảnh";
+
+
+     try {
+       const source = getDetectionSource();
+
+
+       if (!source) {
+         toast.textContent = "Vui lòng bật camera hoặc chọn ảnh khay đồ ăn trước.";
+         return false;
+       }
+
+
+       const results = await detectFoodsFromModel(source);
+       renderDetections(results);
+       modelStatus.textContent = "Đã có kết quả 5 món";
+       return true;
+     } catch (error) {
+       toast.textContent = "Không nhận diện được ảnh. Kiểm tra lại model hoặc dữ liệu đầu vào.";
+       modelStatus.textContent = "Lỗi nhận diện";
+       return false;
+     } finally {
+       detectButton.disabled = false;
+       detectButton.innerHTML = '<span aria-hidden="true">⌁</span>Nhận diện ảnh';
+     }
+   }
+
+
+   imageInput.addEventListener("change", () => {
+     const file = imageInput.files?.[0];
+     toast.textContent = "";
+
+
+     if (!file) return;
+
+
+     fileLabel.textContent = file.name;
+     if (currentObjectUrl) {
+       URL.revokeObjectURL(currentObjectUrl);
+     }
+     currentObjectUrl = URL.createObjectURL(file);
+     trayImage.src = currentObjectUrl;
+     setPreviewMode("image");
+     modelStatus.textContent = "Đã tải ảnh, sẵn sàng nhận diện";
+   });
+
+
+   cameraButton.addEventListener("click", async () => {
+     if (cameraStream) {
+       stopCamera();
+       modelStatus.textContent = trayImage.src ? "Đang dùng ảnh upload" : "Camera đã tắt";
+       return;
+     }
+
+
+     await startCamera();
+   });
+
+
+   cameraSelect.addEventListener("change", async () => {
+     if (!cameraStream) return;
+
+
+     stopCamera();
+     await startCamera();
+   });
+
+
+   detectButton.addEventListener("click", () => runDetection());
+
+
+   clearButton.addEventListener("click", () => {
+     stopCamera();
+     imageInput.value = "";
+     if (currentObjectUrl) {
+       URL.revokeObjectURL(currentObjectUrl);
+       currentObjectUrl = "";
+     }
+     trayImage.removeAttribute("src");
+     setPreviewMode("");
+     fileLabel.textContent = "Tải ảnh từ máy";
+     toast.textContent = "";
+     modelStatus.textContent = "Chế độ giao diện mẫu";
+     renderDetections(emptyRows);
+   });
+
+
+   loadCameraOptions();
+   renderDetections(emptyRows);
+ </script>
+</body>
+</html>
+
+
+
+
+
